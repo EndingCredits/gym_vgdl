@@ -8,5 +8,5 @@ cd gym_vgdl/
 pip install -e .
 ```
 
-Then remember to `import gym_vgdl` and you can use the games as any other env using e.g. `env = gym.make('vgdlaliens-v0')`. New games can be added by grabbing the VGDL game and level descriptions and adding them to gym_vgdl/games, and modifying __init__.py.
+Then remember to `import gym_vgdl` and you can use the games as any other env using e.g. `env = gym.make('vgdlaliens-v0')`. New games can be added by grabbing the VGDL game and level descriptions and adding them to gym_vgdl/games, and modifying `__init__.py`.
 
