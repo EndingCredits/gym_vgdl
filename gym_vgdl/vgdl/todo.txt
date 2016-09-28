@@ -1,0 +1,16 @@
+* Fixes - H
+  - Add No-op action
+  ~ Add support for multiple actions at once
+* Incorporate and test more games ~ M
+  - Add more ontology
+  o Sprites
+* Fix problems outlined on Git ~ M
+  - Incorporate RNG
+* Efficiency Savings ~ L
+  - Load sprites as list
+  - More efficient drawing
+  - Bypass reloading every time
+  - Draw to surface rather than display
+* Tidy Up ~ L
+  - More wrapper methods into main class
+* Pass StateObs ~ H
