@@ -4,7 +4,6 @@ Video game description language -- ontology of concepts.
 @author: Tom Schaul
 '''
 
-from random import choice, random
 from math import sqrt
 import pygame
 from tools import triPoints, unitVector, vectNorm, oncePerStep
@@ -142,7 +141,7 @@ class Spreader(Flicker):
         Flicker.update(self, game)
         if self._age == 2:
             for u in BASEDIRS:
-                if random() < self.spreadprob:
+                if game.random_generator.random() < self.spreadprob:
                     game._createSprite([self.name], (self.lastrect.left + u[0] * self.lastrect.size[0],
                                                      self.lastrect.top + u[1] * self.lastrect.size[1]))
 
@@ -172,7 +171,7 @@ class SpawnPoint(SpriteProducer):
         self.counter = 0
 
     def update(self, game):
-        if (game.time % self.cooldown == 0 and random() < self.prob):
+        if (game.time % self.cooldown == 0 and game.random_generator.random() < self.prob):
             game._createSprite([self.stype], (self.rect.left, self.rect.top))
             self.counter += 1
 
@@ -186,7 +185,7 @@ class RandomNPC(VGDLSprite):
 
     def update(self, game):
         VGDLSprite.update(self, game)
-        self.physics.activeMovement(self, choice(BASEDIRS))
+        self.physics.activeMovement(self, game.random_generator.choice(BASEDIRS))
 
 class OrientedSprite(VGDLSprite):
     """ A sprite that maintains the current orientation. """
@@ -228,7 +227,7 @@ class Walker(Missile):
             elif self.orientation[0] < 0:
                 d = -1
             else:
-                d = choice([-1, 1])
+                d = game.random_generator.choice([-1, 1])
             self.physics.activeMovement(self, (d, 0))
         Missile.update(self, game)
 
@@ -237,7 +236,7 @@ class WalkJumper(Walker):
     strength = 10
     def update(self, game):
         if self.lastdirection[0] == 0:
-            if self.prob < random():
+            if self.prob < game.random_generator.random():
                 self.physics.activeMovement(self, (0, -self.strength))
         Walker.update(self, game)
 
@@ -247,21 +246,21 @@ class RandomInertial(OrientedSprite, RandomNPC):
 
 class RandomMissile(Missile):
     def __init__(self, **kwargs):
-        Missile.__init__(self, orientation=choice(BASEDIRS),
-                         speed=choice([0.1, 0.2, 0.4]), **kwargs)
+        Missile.__init__(self, orientation=game.random_generator.choice(BASEDIRS),
+                         speed=game.random_generator.choice([0.1, 0.2, 0.4]), **kwargs)
 
 class ErraticMissile(Missile):
     """ A missile that randomly changes direction from time to time.
     (with probability 'prob' per timestep). """
     def __init__(self, prob=0.1, **kwargs):
-        Missile.__init__(self, orientation=choice(BASEDIRS), **kwargs)
+        Missile.__init__(self, orientation=game.random_generator.choice(BASEDIRS), **kwargs)
         self.prob = prob
         self.is_stochastic = (prob > 0 and prob < 1)
 
     def update(self, game):
         Missile.update(self, game)
-        if random() < self.prob:
-            self.orientation = choice(BASEDIRS)
+        if game.random_generator.random() < self.prob:
+            self.orientation = game.random_generator.choice(BASEDIRS)
 
 class Bomber(SpawnPoint, Missile):
     color = ORANGE
@@ -309,7 +308,7 @@ class Chaser(RandomNPC):
             options.extend(self._movesToward(game, target))
         if len(options) == 0:
             options = BASEDIRS
-        self.physics.activeMovement(self, choice(options))
+        self.physics.activeMovement(self, game.random_generator.choice(options))
 
 class Fleeing(Chaser):
     """ Just reversing directions"""
@@ -558,8 +557,8 @@ class RotatingFlippingAvatar(RotatingAvatar):
         actions = self._readMultiActions(game)
         if len(actions) > 0 and self.noiseLevel > 0:
             # pick a random one instead
-            if random() < self.noiseLevel*4:
-                actions = [choice([UP, LEFT, DOWN, RIGHT])]
+            if game.random_generator.random() < self.noiseLevel*4:
+                actions = [game.random_generator.choice([UP, LEFT, DOWN, RIGHT])]
         if UP in actions:
             self.speed = 1
         elif DOWN in actions:
@@ -731,6 +730,11 @@ def killSprite(sprite, partner, game):
     """ Kill command """
     game.kill_list.append(sprite)
 
+def killBoth(sprite, partner, game):
+    """ Kill command """
+    game.kill_list.append(sprite)
+    game.kill_list.append(partner)
+
 def cloneSprite(sprite, partner, game):
     game._createSprite([sprite.name], (sprite.rect.left, sprite.rect.top))
 
@@ -766,7 +770,7 @@ def conveySprite(sprite, partner, game):
 def windGust(sprite, partner, game):
     """ Moves the partner in target direction by some step size, but stochastically
     (step, step-1 and step+1 are equally likely) """
-    s = choice([partner.strength, partner.strength + 1, partner.strength - 1])
+    s = game.random_generator.choice([partner.strength, partner.strength + 1, partner.strength - 1])
     if s != 0:
         tmp = sprite.lastrect.copy()
         v = unitVector(partner.orientation)
@@ -776,7 +780,7 @@ def windGust(sprite, partner, game):
 
 def slipForward(sprite, partner, game, prob=0.5):
     """ Slip forward in the direction of the current orientation, sometimes."""
-    if prob > random():
+    if prob > game.random_generator.random():
         tmp = sprite.lastrect
         v = unitVector(sprite.orientation)
         sprite.physics.activeMovement(sprite, v, speed=1)
@@ -785,7 +789,7 @@ def slipForward(sprite, partner, game, prob=0.5):
 
 def attractGaze(sprite, partner, game, prob=0.5):
     """ Turn the orientation to the value given by the partner. """
-    if prob > random():
+    if prob > game.random_generator.random():
         sprite.orientation = partner.orientation
 
 def turnAround(sprite, partner, game):
@@ -801,7 +805,7 @@ def reverseDirection(sprite, partner, game):
     sprite.orientation = (-sprite.orientation[0], -sprite.orientation[1])
 
 def flipDirection(sprite, partner, game):
-    sprite.orientation = choice(BASEDIRS)
+    sprite.orientation = game.random_generator.choice(BASEDIRS)
 
 def bounceDirection(sprite, partner, game, friction=0):
     """ The centers of the objects determine the direction"""
@@ -921,7 +925,7 @@ def pullWithIt(sprite, partner, game):
     sprite.lastrect = tmp
 
 def teleportToExit(sprite, partner, game):
-    e = choice(game.sprite_groups[partner.stype])
+    e = game.random_generator.choice(game.sprite_groups[partner.stype])
     sprite.rect = e.rect
     sprite.lastmove = 0
 

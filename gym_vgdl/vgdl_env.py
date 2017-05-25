@@ -28,13 +28,13 @@ class VGDLEnv(gym.Env):
         self.viewer = None
         
         # Need to build a sample level to get the available actions and screensize....
-        self.g = core.VGDLParser().parseGame(self.game_desc)
-        self.g.buildLevel(self.level_desc)
+        self.game = core.VGDLParser().parseGame(self.game_desc)
+        self.game.buildLevel(self.level_desc)
 
-        self._action_set = self.g.getPossibleActions()
-        self.screen_width, self.screen_height = self.g.screensize
+        self._action_set = self.game.getPossibleActions()
+        self.screen_width, self.screen_height = self.game.screensize
 
-        self.score_last = self.g.score
+        self.score_last = self.game.score
 
         # Set action space and observation space
 
@@ -42,19 +42,17 @@ class VGDLEnv(gym.Env):
         if self._obs_type == 'image':
             self.observation_space = spaces.Box(low=0, high=255, shape=(self.screen_width, self.screen_height, 3))
         elif self._obs_type == 'objects':
-            self.observation_space = spaces.List()
+            self.observation_space = []#spaces.List()
 
-        self.screen = pygame.display.set_mode(self.g.screensize, 0, 32)
+        self.screen = pygame.display.set_mode(self.game.screensize, 0, 32)
 
 
 
     def _step(self, a):
-        self.g.tick(self._action_set.values()[a], True)
+        self.game.tick(self._action_set.values()[a], True)
         state = self._get_obs()
-        reward = self.g.score - self.score_last; self.score_last = self.g.score
-        terminal = self.g.ended
-
-        #print self.g.getObservation()
+        reward = self.game.score - self.score_last; self.score_last = self.game.score
+        terminal = self.game.ended
 
         return state, reward, terminal, {}
 
@@ -71,19 +69,20 @@ class VGDLEnv(gym.Env):
         if self._obs_type == 'image':
             return self._get_image()
         elif self._obs_type == 'objects':
-            return self.g.getObservation()
+            return self.game.getObservation()
 
     def _reset(self):
 
-        del self.g
-        self.g = core.VGDLParser().parseGame(self.game_desc)
-        self.g.buildLevel(self.level_desc)
+        # Do things the easy way...
+        del self.game
+        self.game = core.VGDLParser().parseGame(self.game_desc)
+        self.game.buildLevel(self.level_desc)
 
-        self.g.screen = self.screen
-        self.g.background = pygame.Surface(self.g.screensize)
-        self.g.screen.fill((0, 0, 0))
+        self.game.screen = self.screen
+        self.game.background = pygame.Surface(self.game.screensize)
+        self.game.screen.fill((0, 0, 0))
 
-        self.score_last = self.g.score
+        self.score_last = self.game.score
 
         state = self._get_obs()
 

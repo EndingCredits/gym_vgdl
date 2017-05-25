@@ -5,34 +5,17 @@ Video game description language -- parser, framework and core game classes.
 '''
 
 import pygame
-from random import choice
+import random
 from tools import Node, indentTreeParser
 from collections import defaultdict
 from tools import roundedPoints
 import os
 import sys
-import uuid
-import subprocess
-import glob
 
 
 class VGDLParser(object):
     """ Parses a string into a Game object. """
     verbose = False
-
-    @staticmethod
-    def playGame(game_str, map_str, headless = False, persist_movie = False, movie_dir = "./tmpl"):
-        """ Parses the game and level map strings, and starts the game. """
-        g = VGDLParser().parseGame(game_str)
-        g.buildLevel(map_str)
-        g.uiud = uuid.uuid4()
-        if(headless):
-            g.startGameExternalPlayer(headless, persist_movie, movie_dir )
-            #g.startGame(headless,persist_movie)
-        else:
-            g.startGame(headless,persist_movie)
-
-        return g
 
     def parseGame(self, tree):
         """ Accepts either a string, or a tree. """
@@ -134,6 +117,7 @@ class BasicGame(object):
                        'A': ['avatar'],
                        }
 
+    seed = 123
     block_size = 10
     frame_rate = 25
     load_save_enabled = True
@@ -221,6 +205,7 @@ class BasicGame(object):
         self.ended = False
         self.num_sprites = 0
         self.kill_list=[]
+        self.random_generator = random.Random(self.seed)
 
 
     # Returns a list of empty grid cells
@@ -241,7 +226,7 @@ class BasicGame(object):
 
     def randomizeAvatar(self):
         if len(self.getAvatars()) == 0:
-            self._createSprite(['avatar'], choice(self.emptyBlocks()))
+            self._createSprite(['avatar'], self.random_generator.choice(self.emptyBlocks()))
 
     
     def _createSprite(self, keys, pos):
@@ -341,68 +326,21 @@ class BasicGame(object):
                              ]
 
 
-    # This should be changed to give a StateObs
-    def getFullState(self,as_string = False):
-        """ Return a dictionary that allows full reconstruction of the game state,
-        e.g. for the load/save functionality. """
-        # TODO: make sure this list is complete/correct -- maybe a naming convention would be easier,
-        # if it distinguished in-game-mutable form immutable attributes!
-        ias = self.ignoredattributes
-        obs = {}
-        for key in self.sprite_groups:
-            ss = {}
-            obs[key] = ss
-            for s in self.getSprites(key):
-                pos = (s.rect.left, s.rect.top)
-                attrs = {}
-                while pos in ss:
-                    # two objects of the same type in the same location, we need to disambiguate
-                    pos = (pos, None)
-                if(as_string):
-                    ss[str(pos)] = attrs
-                else:
-                    ss[pos] = attrs
-                for a, val in s.__dict__.iteritems():
-                    if a not in ias:
-                        attrs[a] = val
-                if s.resources:
-                    attrs['resources'] = dict(s.resources)
-
-        fs = {'score': self.score,
-              'ended': self.ended,
-              'objects': obs}
-        return fs
-
-
-    def setFullState(self, fs,as_string = False):
-        """ Reset the game to be exactly as defined in the fullstate dict. """
-        self.reset()
-        self.score = fs['score']
-        self.ended = fs['ended']
-        for key, ss in fs['objects'].iteritems():
-            self.sprite_groups[key] = []
-            for pos, attrs in ss.iteritems():
-                if as_string:
-                    p = eval(pos)
-                else:
-                    p = pos
-                s = self._createSprite_cheap(key, p)
-                for a, val in attrs.iteritems():
-                    if a == 'resources':
-                        for r, v in val.iteritems():
-                            s.resources[r] = v
-                    else:
-                        s.__setattr__(a, val)
-
+    # Returns gamestate in observation format
     def getObservation(self):
         from ontology import Avatar, Immovable, Missile, Portal, RandomNPC, ResourcePack
         state = []
         for key in self.sprite_groups:
             for s in self.getSprites(key):
                 if (key != 'background') & (key != 'portalSlow'):
-                    pos = (s.rect.left, s.rect.top) #s.speed
+                    pos = (float(s.rect.left), float(s.rect.top)) #s.speed
+                    if hasattr(s, 'orientation'):
+                        orient = s.orientation
+                    else:
+                        orient = [0,0]
                     #obs = [ key, pos, isinstance(s,Avatar), isinstance(s,Immovable), isinstance(s,Portal), isinstance(s,RandomNPC), isinstance(s,ResourcePack)]
-                    obs = [ pos[0]/self.block_size, pos[1]/self.block_size, isinstance(s,Avatar), isinstance(s,Immovable), isinstance(s,RandomNPC), isinstance(s,Missile)] #x6
+                    obs = [ pos[0]/self.block_size, pos[1]/self.block_size, float(orient[0]), float(orient[1]), float(isinstance(s,Avatar)),
+                            float(isinstance(s,Immovable)), float(isinstance(s,RandomNPC)), float(isinstance(s,Missile))] #x6
                     state.append(obs)
         return state
 
@@ -557,7 +495,7 @@ class VGDLSprite(object):
         self.speed = speed or self.speed
         self.cooldown = cooldown or self.cooldown
         self.img = 0
-        self.color = color or self.color or (choice(self.COLOR_DISC), choice(self.COLOR_DISC), choice(self.COLOR_DISC))
+        self.color = color or self.color or (self.random_generator.choice(self.COLOR_DISC), self.random_generator.choice(self.COLOR_DISC), self.random_generator.choice(self.COLOR_DISC))
 
         for name, value in kwargs.iteritems():
             try:
