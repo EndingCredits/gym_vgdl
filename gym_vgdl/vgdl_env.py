@@ -32,7 +32,7 @@ class VGDLEnv(gym.Env):
         self.game.buildLevel(self.level_desc)
 
         self._action_set = self.game.getPossibleActions()
-        self.screen_width, self.screen_height = self.game.screensize
+        self.screen_height, self.screen_width = self.game.screensize
 
         self.score_last = self.game.score
 

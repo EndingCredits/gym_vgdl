@@ -1,10 +1,10 @@
-BasicGame block_size=5
+BasicGame block_size=24
     SpriteSet
         background > Immovable img=oryx/space1 hidden=True
         base    > Immovable    color=WHITE img=oryx/space5
         avatar  > FlakAvatar   stype=sam img=oryx/spaceship1
         missile > Missile
-            sam  > orientation=UP    color=BLUE singleton=True img=oryx/bullet2
+            sam  > orientation=UP    color=BLUE singleton=True img=oryx/bullet1
             bomb > orientation=DOWN  color=RED  speed=0.5 img=oryx/bullet2
         alien   > Bomber       stype=bomb   prob=0.05  cooldown=3 speed=0.8
             alienGreen > img=oryx/alien3
@@ -22,15 +22,15 @@ BasicGame block_size=5
 
     TerminationSet
         SpriteCounter      stype=avatar               limit=0 win=False
-        MultiSpriteCounter stype1=portal stype2=alien limit=0 win=True
+        SpriteCounter      stype=base                 limit=0 win=True
         
     InteractionSet
         avatar  EOS  > stepBack
         alien   EOS  > turnAround
         missile EOS  > killSprite
 
-        base bomb > killBoth
-        base sam > killBoth
+        base bomb > killSprite
+        base sam > killSprite scoreChange=1
 
         base   alien > killSprite
         avatar alien > killSprite scoreChange=-1

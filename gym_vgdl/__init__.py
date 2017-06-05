@@ -13,7 +13,7 @@ register(
 
 for game in ['aliens', 'boulderdash', 'chase', 'zelda']:
     register(
-        id='vgdl{}-v0'.format(game),
+        id='vgdl_{}-v0'.format(game),
         entry_point='gym_vgdl:VGDLEnv',
         kwargs={
             'game_file': DATA_DIR + game + '.txt',
@@ -26,7 +26,7 @@ for game in ['aliens', 'boulderdash', 'chase', 'zelda']:
 
 
 register(
-    id='vgdlobstest-v0'.format(game),
+    id='vgdlobstest-v0',
     entry_point='gym_vgdl:VGDLEnv',
     kwargs={
         'game_file': DATA_DIR + 'aliens' + '.txt',

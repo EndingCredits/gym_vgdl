@@ -1,6 +1,6 @@
-BasicGame block_size=24
+BasicGame block_size=10
   SpriteSet
-    floor > Immovable randomtiling=0.9 img=oryx/floor3 hidden=True
+    background > Immovable randomtiling=0.9 img=oryx/floor3 hidden=True
     goal  > Immovable color=GREEN img=oryx/doorclosed1
     key   > Immovable color=ORANGE img=oryx/key2
     sword > OrientedFlicker limit=5 singleton=True img=oryx/slash1
@@ -16,14 +16,14 @@ BasicGame block_size=24
       	
 
   LevelMapping
-    g > floor goal
-    + > floor key        
-    A > floor nokey
-    1 > floor monsterQuick
-    2 > floor monsterNormal
-    3 > floor monsterSlow
+    . > background
+    g > background goal
+    + > background key        
+    A > background nokey
+    1 > background monsterQuick
+    2 > background monsterNormal
+    3 > background monsterSlow
     w > wall
-    . > floor
     
 
   InteractionSet
