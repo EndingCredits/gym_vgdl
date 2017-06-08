@@ -3,6 +3,7 @@ from gym import spaces
 import vgdl.core as core
 import pygame
 import numpy as np
+from  list_space import list_space
 
 
 class VGDLEnv(gym.Env):
@@ -11,7 +12,7 @@ class VGDLEnv(gym.Env):
         'video.frames_per_second': 25
     }
 
-    def __init__(self, game_file = None, map_file = None, obs_type = 'image'):
+    def __init__(self, game_file = None, map_file = None, obs_type='image', **kwargs):
 
         # Load game description and level description
         if game_file == None:
@@ -26,13 +27,14 @@ class VGDLEnv(gym.Env):
 
         self._obs_type = obs_type
         self.viewer = None
+        self.game_args = kwargs
         
         # Need to build a sample level to get the available actions and screensize....
-        self.game = core.VGDLParser().parseGame(self.game_desc)
+        self.game = core.VGDLParser().parseGame(self.game_desc, **self.game_args)
         self.game.buildLevel(self.level_desc)
 
         self._action_set = self.game.getPossibleActions()
-        self.screen_height, self.screen_width = self.game.screensize
+        self.screen_width, self.screen_height = self.game.screensize
 
         self.score_last = self.game.score
 
@@ -40,11 +42,17 @@ class VGDLEnv(gym.Env):
 
         self.action_space = spaces.Discrete(len(self._action_set))
         if self._obs_type == 'image':
-            self.observation_space = spaces.Box(low=0, high=255, shape=(self.screen_width, self.screen_height, 3))
+            self.observation_space = spaces.Box(low=0, high=255, shape=(self.screen_height, self.screen_width, 3))
         elif self._obs_type == 'objects':
-            self.observation_space = []#spaces.List()
+            self.observation_space = list_space(spaces.Box(low=-100, high=100, shape=(8)))
+        elif self._obs_type == 'features':
+            self.observation_space = spaces.Box(low=0, high=100, shape=(3))
 
         self.screen = pygame.display.set_mode(self.game.screensize, 0, 32)
+
+        self.game.screen = self.screen
+        self.game.background = pygame.Surface(self.game.screensize)
+        self.game.screen.fill((0, 0, 0))
 
 
 
@@ -62,6 +70,8 @@ class VGDLEnv(gym.Env):
         return len(self._action_set)
 
     def _get_image(self):
+	self.game._drawAll()
+        pygame.display.update()
         return np.flipud(np.rot90(pygame.surfarray.array3d(
             pygame.display.get_surface()).astype(np.uint8)))
 
@@ -70,17 +80,16 @@ class VGDLEnv(gym.Env):
             return self._get_image()
         elif self._obs_type == 'objects':
             return self.game.getObservation()
+        elif self._obs_type == 'features':
+            return self.game.getFeatures()
 
     def _reset(self):
 
         # Do things the easy way...
-        del self.game
-        self.game = core.VGDLParser().parseGame(self.game_desc)
+        #del self.game
+        #self.game = core.VGDLParser().parseGame(self.game_desc, **self.game_args)
+        self.game.reset()
         self.game.buildLevel(self.level_desc)
-
-        self.game.screen = self.screen
-        self.game.background = pygame.Surface(self.game.screensize)
-        self.game.screen.fill((0, 0, 0))
 
         self.score_last = self.game.score
 

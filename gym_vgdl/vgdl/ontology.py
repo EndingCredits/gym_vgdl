@@ -425,6 +425,7 @@ class MovingAvatar(VGDLSprite, Avatar):
         actions["DOWN"] = K_DOWN
         actions["LEFT"] = K_LEFT
         actions["RIGHT"] = K_RIGHT
+        actions["NO_OP"] = 0
         return actions
 
     def _readAction(self, game):
@@ -464,6 +465,7 @@ class HorizontalAvatar(MovingAvatar):
         actions = {}
         actions["LEFT"] = K_LEFT
         actions["RIGHT"] = K_RIGHT
+        actions["NO_OP"] = 0
         return actions
 
 
@@ -481,6 +483,7 @@ class VerticalAvatar(MovingAvatar):
         actions = {}
         actions["UP"] = K_UP
         actions["DOWN"] = K_DOWN
+        actions["NO_OP"] = 0
         return actions
 
     def update(self, game):

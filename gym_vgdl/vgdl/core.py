@@ -9,6 +9,7 @@ import random
 from tools import Node, indentTreeParser
 from collections import defaultdict
 from tools import roundedPoints
+import math
 import os
 import sys
 
@@ -17,11 +18,12 @@ class VGDLParser(object):
     """ Parses a string into a Game object. """
     verbose = False
 
-    def parseGame(self, tree):
+    def parseGame(self, tree, **kwargs):
         """ Accepts either a string, or a tree. """
         if not isinstance(tree, Node):
             tree = indentTreeParser(tree).children[0]
         sclass, args = self._parseArgs(tree.content)
+        args.update(kwargs)
         self.game = sclass(**args)
         for c in tree.children:
             if c.content == "SpriteSet":
@@ -46,8 +48,9 @@ class VGDLParser(object):
             if ">" in inode.content:
                 pair, edef = [x.strip() for x in inode.content.split(">")]
                 eclass, args = self._parseArgs(edef)
-                self.game.collision_eff.append(tuple([x.strip() for x in pair.split(" ") if len(x)>0]
-                                                     +[eclass, args]))
+                objs = [x.strip() for x in pair.split(" ") if len(x)>0]
+                for obj in objs[1:]:
+                    self.game.collision_eff.append(tuple([objs[0], obj, eclass, args]))
                 if self.verbose:
                     print "Collision", pair, "has effect:", edef
 
@@ -120,7 +123,11 @@ class BasicGame(object):
     seed = 123
     block_size = 10
     frame_rate = 25
-    load_save_enabled = True
+    render_sprites = True
+    load_save_enabled = False
+
+    notable_sprites = {}
+    notable_resources = {}
 
     def __init__(self, **kwargs):
         from ontology import Immovable, DARKGRAY, MovingAvatar, GOLD
@@ -165,8 +172,7 @@ class BasicGame(object):
         self.width = lengths[0]
         self.height = len(lines)
         assert self.width > 1 and self.height > 1, "Level too small."
-        # rescale pixels per block to adapt to the level
-        #self.block_size = max(2,int(800./max(self.width, self.height)))
+
         self.screensize = (self.width*self.block_size, self.height*self.block_size)
 
         # set up resources
@@ -198,11 +204,12 @@ class BasicGame(object):
         self.sprite_order.append('avatar')
 
 
-    # Resets... basically nothing
+
     def reset(self):
         self.score = 0
         self.time = 0
         self.ended = False
+        self.sprite_groups = defaultdict(list)
         self.num_sprites = 0
         self.kill_list=[]
         self.random_generator = random.Random(self.seed)
@@ -223,6 +230,7 @@ class BasicGame(object):
                 if free:
                     res.append((col*self.block_size, row*self.block_size))
         return res
+
 
     def randomizeAvatar(self):
         if len(self.getAvatars()) == 0:
@@ -254,14 +262,6 @@ class BasicGame(object):
             res.append(s)
         return res
 
-    def _createSprite_cheap(self, key, pos):
-        """ The same, but without the checks, which speeds things up during load/saving"""
-        sclass, args, stypes = self.sprite_constr[key]
-        s = sclass(pos=pos, size=(self.block_size, self.block_size), name=key, **args)
-        s.stypes = stypes
-        self.sprite_groups[key].append(s)
-        self.num_sprites += 1
-        return s
 
     def __iter__(self):
         """ Iterator over all sprites (ordered) """
@@ -343,6 +343,23 @@ class BasicGame(object):
                             float(isinstance(s,Immovable)), float(isinstance(s,RandomNPC)), float(isinstance(s,Missile))] #x6
                     state.append(obs)
         return state
+
+    def getFeatures(self):
+        avatars = self.getAvatars()
+        l = len(avatars)
+        if l is not 0:
+            a = avatars[0]
+        sprite_distances = []
+        for key in self.notable_sprites:
+            dist = 100
+            if l is not 0:
+              for s in self.getSprites(key):
+                dist = min(self._getDistance(a, s)/self.block_size, dist)
+            sprite_distances.append(dist)
+        return sprite_distances
+
+    def _getDistance(self, s1, s2):
+        return math.hypot(s1.rect.x - s2.rect.x, s1.rect.y - s2.rect.y)
 
 
     # Clears sprite from screen and removes dead sprites
@@ -462,9 +479,9 @@ class BasicGame(object):
         # Clean up dead sprites
         self._clearAll()
         
-        if render:
-	    self._drawAll()
-            pygame.display.update()
+        #if render:
+	#    self._drawAll()
+        #    pygame.display.update()
 
 
 
@@ -554,7 +571,7 @@ class VGDLSprite(object):
         #from ontology import LIGHTGREEN
         #rounded = roundedPoints(self.rect)
         #pygame.draw.lines(screen, self.color, True, rounded, 2)
-        if self.img:
+        if self.img and game.render_sprites:
             screen.blit(self.scale_image, shrunk)
         else:
             screen.fill(self.color, shrunk)
@@ -579,11 +596,12 @@ class VGDLSprite(object):
             offset += barheight
 
     def _clear(self, screen, background, double=False):
-        0#r = screen.blit(background, self.rect, self.rect)
+        pass
+        #r = screen.blit(background, self.rect, self.rect)
         #VGDLSprite.dirtyrects.append(r)
         #if double:
-            #r = screen.blit(background, self.lastrect, self.lastrect)
-            #VGDLSprite.dirtyrects.append(r)
+        #    r = screen.blit(background, self.lastrect, self.lastrect)
+        #    VGDLSprite.dirtyrects.append(r)
 
     def __repr__(self):
         return self.name+" at (%s,%s)"%(self.rect.left, self.rect.top)

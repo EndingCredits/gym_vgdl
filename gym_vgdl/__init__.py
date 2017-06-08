@@ -11,7 +11,7 @@ register(
     nondeterministic=True,
 )
 
-for game in ['aliens', 'boulderdash', 'chase', 'zelda']:
+for game in ['aliens', 'boulderdash', 'chase', 'frogs', 'missilecommand', 'portals', 'sokoban', 'survivezombies', 'zelda']:
     register(
         id='vgdl_{}-v0'.format(game),
         entry_point='gym_vgdl:VGDLEnv',
@@ -32,6 +32,19 @@ register(
         'game_file': DATA_DIR + 'aliens' + '.txt',
         'map_file': DATA_DIR + 'aliens' + '_lvl0.txt',
         'obs_type': 'objects'
+    },
+    timestep_limit=1000,
+    nondeterministic=True,
+)
+
+register(
+    id='vgdltest-v0',
+    entry_point='gym_vgdl:VGDLEnv',
+    kwargs={
+        'game_file': DATA_DIR + 'aliens' + '.txt',
+        'map_file': DATA_DIR + 'aliens' + '_lvl0.txt',
+        'obs_type': 'features',
+        'notable_sprites': ['base', 'bomb', 'alien']
     },
     timestep_limit=1000,
     nondeterministic=True,
