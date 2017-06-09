@@ -28,7 +28,7 @@ BasicGame block_size=10
 
   InteractionSet
     movable wall  > stepBack
-    nokey goal    > stepBack
+    #nokey goal    > stepBack
     goal withkey  > killSprite scoreChange=1
     enemy sword > killSprite scoreChange=2
     enemy enemy > stepBack

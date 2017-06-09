@@ -1,6 +1,6 @@
 BasicGame
     SpriteSet
-        floor > Immovable hidden=True img=oryx/grass autotiling=True
+        floor > Immovable hidden=True img=oryx/grass_0
         carcass > Immovable color=BROWN img=oryx/worm2 shrinkfactor=0.6
         goat > stype=avatar
             angry  > Chaser  color=ORANGE img=oryx/bird3

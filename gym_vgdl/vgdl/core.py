@@ -126,8 +126,8 @@ class BasicGame(object):
     render_sprites = True
     load_save_enabled = False
 
-    notable_sprites = {}
-    notable_resources = {}
+    notable_sprites = []
+    notable_resources = []
 
     def __init__(self, **kwargs):
         from ontology import Immovable, DARKGRAY, MovingAvatar, GOLD
@@ -253,7 +253,7 @@ class BasicGame(object):
                         break
             if anyother:
                 continue
-            s = sclass(pos=pos, size=(self.block_size, self.block_size), name=key, **args)
+            s = sclass(pos=pos, size=(self.block_size, self.block_size), name=key, random_generator=self.random_generator, **args)
             s.stypes = stypes
             self.sprite_groups[key].append(s)
             self.num_sprites += 1
@@ -328,21 +328,32 @@ class BasicGame(object):
 
     # Returns gamestate in observation format
     def getObservation(self):
-        from ontology import Avatar, Immovable, Missile, Portal, RandomNPC, ResourcePack
+        #from ontology import Avatar, Immovable, Missile, Portal, RandomNPC, ResourcePack
         state = []
-        for key in self.sprite_groups:
+
+        sprites_list = ['avatar'] + self.notable_sprites
+        num_classes = len(sprites_list)
+        resources_list = self.notable_resources
+
+        for i, key in enumerate(sprites_list):
+            class_one_hot = [float(j==i) for j in range(num_classes)]
             for s in self.getSprites(key):
-                if (key != 'background') & (key != 'portalSlow'):
-                    pos = (float(s.rect.left), float(s.rect.top)) #s.speed
-                    if hasattr(s, 'orientation'):
-                        orient = s.orientation
-                    else:
-                        orient = [0,0]
-                    #obs = [ key, pos, isinstance(s,Avatar), isinstance(s,Immovable), isinstance(s,Portal), isinstance(s,RandomNPC), isinstance(s,ResourcePack)]
-                    obs = [ pos[0]/self.block_size, pos[1]/self.block_size, float(orient[0]), float(orient[1]), float(isinstance(s,Avatar)),
-                            float(isinstance(s,Immovable)), float(isinstance(s,RandomNPC)), float(isinstance(s,Missile))] #x6
-                    state.append(obs)
+                position = [float(s.rect.y)/self.block_size, float(s.rect.x)/self.block_size]
+                if hasattr(s, 'orientation'):
+                    orientation = [float(a) for a in s.orientation]
+                else:
+                    orientation = [0.0, 0.0]
+
+                resources = [float(s.resources[r]) for r in resources_list]
+
+                object_att = position + orientation + class_one_hot + resources
+                #obs = [ pos[0]/self.block_size, pos[1]/self.block_size, float(orient[0]), float(orient[1]), float(isinstance(s,Avatar)),
+                #        float(isinstance(s,Immovable)), float(isinstance(s,RandomNPC)), float(isinstance(s,Missile))] #x6
+                state.append(object_att)
         return state
+
+    def lenObservation(self):
+        return 2 + 2 + (len(self.notable_sprites)+1) + len(self.notable_resources)
 
     def getFeatures(self):
         avatars = self.getAvatars()
@@ -360,6 +371,9 @@ class BasicGame(object):
 
     def _getDistance(self, s1, s2):
         return math.hypot(s1.rect.x - s2.rect.x, s1.rect.y - s2.rect.y)
+
+    def lenFeatures(self):
+        return len(self.notable_sprites)
 
 
     # Clears sprite from screen and removes dead sprites
@@ -480,7 +494,7 @@ class BasicGame(object):
         self._clearAll()
         
         #if render:
-	#    self._drawAll()
+	self._drawAll()
         #    pygame.display.update()
 
 
@@ -502,7 +516,7 @@ class VGDLSprite(object):
     physicstype=None
     shrinkfactor=0
 
-    def __init__(self, pos, size=(10,10), color=None, speed=None, cooldown=None, physicstype=None, **kwargs):
+    def __init__(self, pos, size=(10,10), color=None, speed=None, cooldown=None, physicstype=None, random_generator=None, **kwargs):
         from ontology import GridPhysics
         self.rect = pygame.Rect(pos, size)
         self.lastrect = self.rect
@@ -512,7 +526,7 @@ class VGDLSprite(object):
         self.speed = speed or self.speed
         self.cooldown = cooldown or self.cooldown
         self.img = 0
-        self.color = color or self.color or (self.random_generator.choice(self.COLOR_DISC), self.random_generator.choice(self.COLOR_DISC), self.random_generator.choice(self.COLOR_DISC))
+        self.color = color or self.color or (random_generator.choice(self.COLOR_DISC), random_generator.choice(self.COLOR_DISC), random_generator.choice(self.COLOR_DISC))
 
         for name, value in kwargs.iteritems():
             try:
@@ -571,6 +585,7 @@ class VGDLSprite(object):
         #from ontology import LIGHTGREEN
         #rounded = roundedPoints(self.rect)
         #pygame.draw.lines(screen, self.color, True, rounded, 2)
+
         if self.img and game.render_sprites:
             screen.blit(self.scale_image, shrunk)
         else:
@@ -589,18 +604,19 @@ class VGDLSprite(object):
         for r in sorted(self.resources.keys()):
             wiggle = rect.width/10.
             prop = max(0,min(1,self.resources[r] / float(game.resources_limits[r])))
-            filled = pygame.Rect(rect.left+wiggle/2, offset, prop*(rect.width-wiggle), barheight)
-            rest   = pygame.Rect(rect.left+wiggle/2+prop*(rect.width-wiggle), offset, (1-prop)*(rect.width-wiggle), barheight)
-            screen.fill(game.resources_colors[r], filled)
-            screen.fill(BLACK, rest)
-            offset += barheight
+            if prop != 0:
+                filled = pygame.Rect(rect.left+wiggle/2, offset, prop*(rect.width-wiggle), barheight)
+                rest   = pygame.Rect(rect.left+wiggle/2+prop*(rect.width-wiggle), offset, (1-prop)*(rect.width-wiggle), barheight)
+                screen.fill(game.resources_colors[r], filled)
+                screen.fill(BLACK, rest)
+                offset += barheight
 
-    def _clear(self, screen, background, double=False):
+    def _clear(self, screen, background, double=True):
         pass
-        #r = screen.blit(background, self.rect, self.rect)
+        r = screen.blit(background, self.rect, self.rect)
         #VGDLSprite.dirtyrects.append(r)
-        #if double:
-        #    r = screen.blit(background, self.lastrect, self.lastrect)
+        if double:
+            r = screen.blit(background, self.lastrect, self.lastrect)
         #    VGDLSprite.dirtyrects.append(r)
 
     def __repr__(self):

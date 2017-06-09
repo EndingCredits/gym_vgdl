@@ -44,9 +44,9 @@ class VGDLEnv(gym.Env):
         if self._obs_type == 'image':
             self.observation_space = spaces.Box(low=0, high=255, shape=(self.screen_height, self.screen_width, 3))
         elif self._obs_type == 'objects':
-            self.observation_space = list_space(spaces.Box(low=-100, high=100, shape=(8)))
+            self.observation_space = list_space(spaces.Box(low=-100, high=100, shape=(self.game.lenObservation())))
         elif self._obs_type == 'features':
-            self.observation_space = spaces.Box(low=0, high=100, shape=(3))
+            self.observation_space = spaces.Box(low=0, high=100, shape=(self.game.lenFeatures()))
 
         self.screen = pygame.display.set_mode(self.game.screensize, 0, 32)
 
@@ -58,6 +58,7 @@ class VGDLEnv(gym.Env):
 
     def _step(self, a):
         self.game.tick(self._action_set.values()[a], True)
+        self._update_display()
         state = self._get_obs()
         reward = self.game.score - self.score_last; self.score_last = self.game.score
         terminal = self.game.ended
@@ -69,9 +70,12 @@ class VGDLEnv(gym.Env):
     def _n_actions(self):
         return len(self._action_set)
 
-    def _get_image(self):
+    def _update_display(self):
 	self.game._drawAll()
         pygame.display.update()
+
+    def _get_image(self):
+        self._update_display()
         return np.flipud(np.rot90(pygame.surfarray.array3d(
             pygame.display.get_surface()).astype(np.uint8)))
 
