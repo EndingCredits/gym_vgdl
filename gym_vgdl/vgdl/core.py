@@ -159,6 +159,7 @@ class BasicGame(object):
         self.resources_limits = defaultdict(lambda: 2)
         self.resources_colors = defaultdict(lambda: GOLD)
 
+        self.random_generator = random.Random(self.seed)
         self.is_stochastic = False
         self._lastsaved = None
         self.reset()
@@ -204,7 +205,6 @@ class BasicGame(object):
         self.sprite_order.append('avatar')
 
 
-
     def reset(self):
         self.score = 0
         self.time = 0
@@ -212,7 +212,7 @@ class BasicGame(object):
         self.sprite_groups = defaultdict(list)
         self.num_sprites = 0
         self.kill_list=[]
-        self.random_generator = random.Random(self.seed)
+        #self.random_generator = random.Random(self.seed)
 
 
     # Returns a list of empty grid cells
