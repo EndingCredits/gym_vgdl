@@ -360,6 +360,14 @@ class BasicGame(object):
         l = len(avatars)
         if l is not 0:
             a = avatars[0]
+            avatar_pos = [float(a.rect.x)/self.block_size, float(a.rect.y)/self.block_size]
+            resources = [float(a.resources[r]) for r in self.notable_resources]
+            speed = [a.speed]
+        else:
+            avatar_pos = [.0, .0]
+            resources = [.0 for r in self.notable_resources]
+            speed = [.0]
+        
         sprite_distances = []
         for key in self.notable_sprites:
             dist = 100
@@ -367,13 +375,17 @@ class BasicGame(object):
               for s in self.getSprites(key):
                 dist = min(self._getDistance(a, s)/self.block_size, dist)
             sprite_distances.append(dist)
-        return sprite_distances
+        
+
+            
+        features = avatar_pos + speed + sprite_distances + resources
+        return features
 
     def _getDistance(self, s1, s2):
         return math.hypot(s1.rect.x - s2.rect.x, s1.rect.y - s2.rect.y)
 
     def lenFeatures(self):
-        return len(self.notable_sprites)
+        return 2 + 1 + len(self.notable_sprites) + len(self.notable_resources)
 
 
     # Clears sprite from screen and removes dead sprites
