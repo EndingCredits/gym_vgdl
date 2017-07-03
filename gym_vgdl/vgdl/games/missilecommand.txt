@@ -7,7 +7,7 @@ BasicGame
     movable >
       avatar  > ShootAvatar stype=explosion img=oryx/spaceship1
       incoming >
-        incoming_slow  > Chaser stype=city color=ORANGE speed=0.1 img=oryx/firedown1
+        incoming_slow  > Chaser stype=city color=ORANGE speed=0.2 img=oryx/firedown1
         incoming_fast  > Chaser stype=city color=YELLOW speed=0.3 img=oryx/firedown2
 
     wall > Immovable img=newset/block2
