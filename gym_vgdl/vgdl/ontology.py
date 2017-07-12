@@ -6,7 +6,7 @@ Video game description language -- ontology of concepts.
 
 from math import sqrt
 import pygame
-from tools import triPoints, unitVector, vectNorm, oncePerStep
+from .tools import triPoints, unitVector, vectNorm, oncePerStep
 
 # ---------------------------------------------------------------------
 #     Constants
@@ -103,7 +103,7 @@ class GravityPhysics(ContinuousPhysics):
 # ---------------------------------------------------------------------
 #     Sprite types
 # ---------------------------------------------------------------------
-from core import VGDLSprite, Resource
+from .core import VGDLSprite, Resource
 
 class Immovable(VGDLSprite):
     """ A gray square that does not budge. """
@@ -315,7 +315,7 @@ class Fleeing(Chaser):
     fleeing = True
 
 class AStarChaser(RandomNPC):
-    from ai import AStarWorld
+    from .ai import AStarWorld
     """ Move towards the character using A* search. """
     stype = None
     fleeing = False
@@ -408,7 +408,7 @@ class AStarChaser(RandomNPC):
 # ---------------------------------------------------------------------
 #     Avatars: player-controlled sprite types
 # ---------------------------------------------------------------------
-from core import Avatar
+from .core import Avatar
 
 class MovingAvatar(VGDLSprite, Avatar):
     """ Default avatar, moves in the 4 cardinal directions. """
@@ -686,7 +686,7 @@ class MarioAvatar(InertialAvatar):
 # ---------------------------------------------------------------------
 #     Termination criteria
 # ---------------------------------------------------------------------
-from core import Termination
+from .core import Termination
 
 class Timeout(Termination):
     def __init__(self, limit=0, win=False):

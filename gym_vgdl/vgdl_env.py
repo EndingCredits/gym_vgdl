@@ -1,9 +1,9 @@
 import gym
 from gym import spaces
-import vgdl.core as core
+from .vgdl import core
 import pygame
 import numpy as np
-from  list_space import list_space
+from .list_space import list_space
 
 
 class VGDLEnv(gym.Env):
@@ -57,7 +57,7 @@ class VGDLEnv(gym.Env):
 
 
     def _step(self, a):
-        self.game.tick(self._action_set.values()[a], True)
+        self.game.tick(list(self._action_set.values())[a], True)
         self._update_display()
         state = self._get_obs()
         reward = self.game.score - self.score_last; self.score_last = self.game.score
@@ -71,7 +71,7 @@ class VGDLEnv(gym.Env):
         return len(self._action_set)
 
     def _update_display(self):
-	self.game._drawAll()
+        self.game._drawAll()
         pygame.display.update()
 
     def _get_image(self):

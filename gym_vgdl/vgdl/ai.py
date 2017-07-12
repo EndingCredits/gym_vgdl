@@ -1,7 +1,7 @@
-
 import math
-import core
+from .core import VGDLSprite
 #from tools import logToFile
+
 class AStarNode(object):
 
 	def __init__(self, index, vgdlSprite):
@@ -20,7 +20,7 @@ class AStarWorld(object):
 		self.food = game.getSprites('food')
 		self.nest = game.getSprites('nest')
 		self.moving = game.getSprites('moving')
-		self.empty = [core.VGDLSprite(pos, (self.game.block_size, self.game.block_size)) for pos in self.game.emptyBlocks()]
+		self.empty = [VGDLSprite(pos, (self.game.block_size, self.game.block_size)) for pos in self.game.emptyBlocks()]
 
 		##print "food=%s, nest=%s, moving=%s" %(len(food), len(nest), len(moving))
 		##print "empty=%s"  %	(len(empty))

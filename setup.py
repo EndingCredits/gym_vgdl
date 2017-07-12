@@ -12,6 +12,10 @@ setup(name='gym_vgdl',
       author_email='',
       license='',
       packages=[package for package in find_packages()
-                if package.startswith('gym')],
+                if package.startswith('gym_vgdl')],
+      install_requires=[
+          'pygame',
+      ],
       zip_safe=False,
 )
+

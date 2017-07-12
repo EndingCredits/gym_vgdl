@@ -6,9 +6,9 @@ Video game description language -- parser, framework and core game classes.
 
 import pygame
 import random
-from tools import Node, indentTreeParser
+from .tools import Node, indentTreeParser
 from collections import defaultdict
-from tools import roundedPoints
+from .tools import roundedPoints
 import math
 import os
 import sys
@@ -37,10 +37,12 @@ class VGDLParser(object):
         return self.game
 
     def _eval(self, estr):
-        """ Whatever is visible in the global namespace (after importing the ontologies)
+        """ 
+        Whatever is visible in the global namespace (after importing the ontologies)
         can be used in the VGDL, and is evaluated.
-        """
-        from ontology import * #@UnusedWildImport
+        """        
+        #import gym_vgdl.vgdl.ontology
+        #from .ontology import * #@UnusedWildImport
         return eval(estr)
 
     def parseInteractions(self, inodes):
@@ -52,13 +54,13 @@ class VGDLParser(object):
                 for obj in objs[1:]:
                     self.game.collision_eff.append(tuple([objs[0], obj, eclass, args]))
                 if self.verbose:
-                    print "Collision", pair, "has effect:", edef
+                    print("Collision", pair, "has effect:", edef)
 
     def parseTerminations(self, tnodes):
         for tn in tnodes:
             sclass, args = self._parseArgs(tn.content)
             if self.verbose:
-                print "Adding:", sclass, args
+                print("Adding:", sclass, args)
             self.game.terminations.append(sclass(**args))
 
     def parseSprites(self, snodes, parentclass=None, parentargs={}, parenttypes=[]):
@@ -75,7 +77,7 @@ class VGDLParser(object):
 
             if len(sn.children) == 0:
                 if self.verbose:
-                    print "Defining:", key, sclass, args, stypes
+                    print("Defining:", key, sclass, args, stypes)
                 self.game.sprite_constr[key] = (sclass, args, stypes)
                 if key in self.game.sprite_order:
                     # last one counts
@@ -91,7 +93,7 @@ class VGDLParser(object):
             # a char can map to multiple sprites
             keys = [x.strip() for x in val.split(" ") if len(x)>0]
             if self.verbose:
-                print "Mapping", c, keys
+                print("Mapping", c, keys)
             self.game.char_mapping[c] = keys
 
     def _parseArgs(self, s,  sclass=None, args=None):
@@ -130,12 +132,12 @@ class BasicGame(object):
     notable_resources = []
 
     def __init__(self, **kwargs):
-        from ontology import Immovable, DARKGRAY, MovingAvatar, GOLD
-        for name, value in kwargs.iteritems():
+        from .ontology import Immovable, DARKGRAY, MovingAvatar, GOLD
+        for name, value in kwargs.items():
             if hasattr(self, name):
                 self.__dict__[name] = value
             else:
-                print "WARNING: undefined parameter '%s' for game! "%(name)
+                print("WARNING: undefined parameter '%s' for game! "%(name))
 
         # contains mappings to constructor (just a few defaults are known)
         self.sprite_constr = {'wall': (Immovable, {'color': DARKGRAY}, ['wall']),
@@ -166,9 +168,9 @@ class BasicGame(object):
 
 
     def buildLevel(self, lstr):
-        from ontology import stochastic_effects
+        from .ontology import stochastic_effects
         lines = [l for l in lstr.split("\n") if len(l)>0]
-        lengths = map(len, lines)
+        lengths = list(map(len, lines))
         assert min(lengths)==max(lengths), "Inconsistent line lengths."
         self.width = lengths[0]
         self.height = len(lines)
@@ -177,7 +179,7 @@ class BasicGame(object):
         self.screensize = (self.width*self.block_size, self.height*self.block_size)
 
         # set up resources
-        for res_type, (sclass, args, _) in self.sprite_constr.iteritems():
+        for res_type, (sclass, args, _) in self.sprite_constr.items():
             if issubclass(sclass, Resource):
                 if 'res_type' in args:
                     res_type = args['res_type']
@@ -241,7 +243,7 @@ class BasicGame(object):
         res = []
         for key in keys:
             if self.num_sprites > self.MAX_SPRITES:
-                print "Sprite limit reached."
+                print("Sprite limit reached.")
                 return
             sclass, args, stypes = self.sprite_constr[key]
             # verify the singleton condition
@@ -328,7 +330,7 @@ class BasicGame(object):
 
     # Returns gamestate in observation format
     def getObservation(self):
-        #from ontology import Avatar, Immovable, Missile, Portal, RandomNPC, ResourcePack
+        #from .ontology import Avatar, Immovable, Missile, Portal, RandomNPC, ResourcePack
         state = []
 
         sprites_list = ['avatar'] + self.notable_sprites
@@ -487,27 +489,28 @@ class BasicGame(object):
         self.keystate = [0]*323 #323 seems to be the magic number..... (try len(pygame.key.get_pressed()))
         self.keystate[action] = True
 
-	# Iterate Over Termination Criteria
-	for t in self.terminations:
-	    self.ended, win = t.isDone(self)
-	    if self.ended:
-	        break
+        # Iterate Over Termination Criteria
+        for t in self.terminations:
+            self.ended, win = t.isDone(self)
+            if self.ended:
+                break
 
-        if self.time > 1000:
-            self.ended = True
+            if self.time > 1000:
+                self.ended = True
 
-	# Update Sprites
-	for s in self:
-	    s.update(self)
-	# Handle Collision Effects
-	self._eventHandling()
+        # Update Sprites
+        for s in self:
+            s.update(self)
+        
+        # Handle Collision Effects
+        self._eventHandling()
 
         # Clean up dead sprites
         self._clearAll()
         
         #if render:
-	self._drawAll()
-        #    pygame.display.update()
+        self._drawAll()
+        #pygame.display.update()
 
 
 
@@ -529,7 +532,7 @@ class VGDLSprite(object):
     shrinkfactor=0
 
     def __init__(self, pos, size=(10,10), color=None, speed=None, cooldown=None, physicstype=None, random_generator=None, **kwargs):
-        from ontology import GridPhysics
+        from .ontology import GridPhysics
         self.rect = pygame.Rect(pos, size)
         self.lastrect = self.rect
         self.physicstype = physicstype or self.physicstype or GridPhysics
@@ -540,11 +543,11 @@ class VGDLSprite(object):
         self.img = 0
         self.color = color or self.color or (random_generator.choice(self.COLOR_DISC), random_generator.choice(self.COLOR_DISC), random_generator.choice(self.COLOR_DISC))
 
-        for name, value in kwargs.iteritems():
+        for name, value in kwargs.items():
             try:
                 self.__dict__[name] = value
             except:
-                print "WARNING: undefined parameter '%s' for sprite '%s'! "%(name, self.__class__.__name__)
+                print("WARNING: undefined parameter '%s' for sprite '%s'! "%(name, self.__class__.__name__))
         # how many timesteps ago was the last move?
         self.lastmove = 0
 
@@ -594,7 +597,7 @@ class VGDLSprite(object):
             shrunk = self.rect
 
         # uncomment for debugging
-        #from ontology import LIGHTGREEN
+        #from .ontology import LIGHTGREEN
         #rounded = roundedPoints(self.rect)
         #pygame.draw.lines(screen, self.color, True, rounded, 2)
 
@@ -609,7 +612,7 @@ class VGDLSprite(object):
 
     def _drawResources(self, game, screen, rect):
         """ Draw progress bars on the bottom third of the sprite """
-        from ontology import BLACK
+        from .ontology import BLACK
         tot = len(self.resources)
         barheight = rect.height/3.5/tot
         offset = rect.top+2*rect.height/3.
@@ -665,3 +668,6 @@ class Termination(object):
             return True, False
         else:
             return False, None
+
+# This needs to go at the bottom so that classes in core are already loaded
+from .ontology import *
