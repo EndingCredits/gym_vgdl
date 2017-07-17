@@ -115,6 +115,25 @@ class VGDLEnv(gym.Env):
             if self.viewer is None:
                 self.viewer = rendering.SimpleImageViewer()
             self.viewer.imshow(img)
+            
+        
+class Padlist(gym.ObservationWrapper):
+    def __init__(self, env=None):
+        self.max_objects = 200
+        super(Padlist, self).__init__(env)
+        env_shape = self.observation_space.shape
+        env_shape[0] = self.max_objects
+        self.observation_space = gym.spaces.Box(low=-100, high=100, shape=env_shape)
+
+    def _observation(self, obs):
+        return Padlist.process(obs, self.max_objects)
+        
+    @staticmethod
+    def process(input_list, to_len):
+        max_len = to_len
+        item_len = len(input_list)
+        padded = np.pad(np.array(input_list,dtype=np.float32), ((0,max_len-item_len),(0,0)), mode='constant')
+        return padded
 
 
 ####################################################################################################
