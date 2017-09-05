@@ -118,8 +118,8 @@ class VGDLEnv(gym.Env):
             
         
 class Padlist(gym.ObservationWrapper):
-    def __init__(self, env=None):
-        self.max_objects = 200
+    def __init__(self, env=None, max_objs=200):
+        self.max_objects = max_objs
         super(Padlist, self).__init__(env)
         env_shape = self.observation_space.shape
         env_shape[0] = self.max_objects
@@ -132,8 +132,11 @@ class Padlist(gym.ObservationWrapper):
     def process(input_list, to_len):
         max_len = to_len
         item_len = len(input_list)
-        padded = np.pad(np.array(input_list,dtype=np.float32), ((0,max_len-item_len),(0,0)), mode='constant')
-        return padded
+        if item_len < max_len:
+          padded = np.pad(np.array(input_list,dtype=np.float32), ((0,max_len-item_len),(0,0)), mode='constant')
+          return padded
+        else:
+          return np.array(input_list, dtype=np.float32)[:max_len]
 
 
 ####################################################################################################
