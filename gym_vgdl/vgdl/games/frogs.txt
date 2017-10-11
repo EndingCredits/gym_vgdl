@@ -36,7 +36,7 @@ BasicGame
         SpriteCounter stype=avatar limit=0 win=False
     
     LevelMapping
-        g > grass goal
+        g > goal grass
         0 > water grass
         1 > forestDense water       # note how a single character can spawn multiple sprites
         2 > forestDense log

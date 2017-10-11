@@ -48,8 +48,9 @@ class VGDLEnv(gym.Env):
         elif self._obs_type == 'features':
             self.observation_space = spaces.Box(low=0, high=100, shape=(self.game.lenFeatures()))
 
-        self.screen = pygame.display.set_mode(self.game.screensize, 0, 32)
-
+        self.display = pygame.display.set_mode(self.game.screensize, 0, 32)
+        self.screen = pygame.Surface(self.game.screensize)
+        
         self.game.screen = self.screen
         self.game.background = pygame.Surface(self.game.screensize)
         self.game.screen.fill((0, 0, 0))
@@ -72,12 +73,13 @@ class VGDLEnv(gym.Env):
 
     def _update_display(self):
         self.game._drawAll()
+        self.display.blit(self.screen, (0,0))
         pygame.display.update()
 
     def _get_image(self):
         self._update_display()
         return np.flipud(np.rot90(pygame.surfarray.array3d(
-            pygame.display.get_surface()).astype(np.uint8)))
+            self.screen).astype(np.uint8)))
 
     def _get_obs(self):
         if self._obs_type == 'image':
@@ -119,7 +121,7 @@ class VGDLEnv(gym.Env):
         
 class Padlist(gym.ObservationWrapper):
     def __init__(self, env=None):
-        self.max_objects = 200
+        self.max_objects = 250
         super(Padlist, self).__init__(env)
         env_shape = self.observation_space.shape
         env_shape[0] = self.max_objects
