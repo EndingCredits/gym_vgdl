@@ -57,7 +57,7 @@ class VGDLEnv(gym.Env):
 
 
 
-    def _step(self, a):
+    def step(self, a):
         self.game.tick(list(self._action_set.values())[a], True)
         self._update_display()
         state = self._get_obs()
@@ -65,6 +65,8 @@ class VGDLEnv(gym.Env):
         terminal = self.game.ended
 
         return state, reward, terminal, {}
+
+
 
 
     @property
@@ -89,7 +91,7 @@ class VGDLEnv(gym.Env):
         elif self._obs_type == 'features':
             return self.game.getFeatures()
 
-    def _reset(self):
+    def reset(self):
 
         # Do things the easy way...
         #del self.game
@@ -103,7 +105,7 @@ class VGDLEnv(gym.Env):
 
         return state
 
-    def _render(self, mode='human', close=False):
+    def render(self, mode='human', close=False):
         if close:
             if self.viewer is not None:
                 self.viewer.close()
