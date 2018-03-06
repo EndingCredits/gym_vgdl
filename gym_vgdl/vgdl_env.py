@@ -45,6 +45,9 @@ class VGDLEnv(gym.Env):
         if self._obs_type == 'image':
             self.observation_space = spaces.Box(low=0, high=255, shape=(self.screen_height, self.screen_width, 3))
         elif self._obs_type == 'objects':
+            # An objects observation consists of a list of observations,
+            # one for each sprite (including walls).
+            # An observation is [y, x, orient_y, orient_x, *class_one_hot, *resources]
             self.observation_space = list_space(spaces.Box(low=-100, high=100, shape=(self.game.lenObservation(),)))
         elif self._obs_type == 'features':
             self.observation_space = spaces.Box(low=0, high=100, shape=(self.game.lenFeatures(),))
