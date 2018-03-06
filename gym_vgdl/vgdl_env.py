@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import gym
 from gym import spaces
 from .vgdl import core
@@ -33,14 +34,13 @@ class VGDLEnv(gym.Env):
         self.game = core.VGDLParser().parseGame(self.game_desc, **self.game_args)
         self.game.buildLevel(self.level_desc)
 
-        # TODO ordered dict? Check in pdb
-        self._action_set = self.game.getPossibleActions()
-        self.screen_width, self.screen_height = self.game.screensize
+        # Dict action -> key code
+        self._action_set = OrderedDict(self.game.getPossibleActions())
 
+        self.screen_width, self.screen_height = self.game.screensize
         self.score_last = self.game.score
 
         # Set action space and observation space
-
         self.action_space = spaces.Discrete(len(self._action_set))
         if self._obs_type == 'image':
             self.observation_space = spaces.Box(low=0, high=255, shape=(self.screen_height, self.screen_width, 3))
@@ -51,7 +51,7 @@ class VGDLEnv(gym.Env):
 
         # Keep a Surface for drawing on (screen)
         # and a bigger one that is actually rendered (display)
-        self.zoom = 3
+        self.zoom = 5
         self.display_size = np.array(self.game.screensize) * self.zoom
         self.display = pygame.display.set_mode(self.display_size, 0, 32)
         self.screen = pygame.Surface(self.game.screensize)
@@ -63,7 +63,7 @@ class VGDLEnv(gym.Env):
 
 
     def step(self, a):
-        self.game.tick(list(self._action_set.values())[a], True)
+        self.game.tick(self._action_keys[a], True)
         state = self._get_obs()
         reward = self.game.score - self.score_last; self.score_last = self.game.score
         terminal = self.game.ended
@@ -74,6 +74,14 @@ class VGDLEnv(gym.Env):
     @property
     def _n_actions(self):
         return len(self._action_set)
+
+    @property
+    def _action_keys(self):
+        return list(self._action_set.values())
+
+    def get_action_meanings(self):
+        # In the spirit of the Atari environment, describe actions with strings
+        return list(self._action_set.keys())
 
     def _update_display(self):
         self.game._drawAll()
@@ -95,7 +103,6 @@ class VGDLEnv(gym.Env):
             return self.game.getFeatures()
 
     def reset(self):
-
         # Do things the easy way...
         #del self.game
         #self.game = core.VGDLParser().parseGame(self.game_desc, **self.game_args)
