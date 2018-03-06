@@ -33,6 +33,7 @@ class VGDLEnv(gym.Env):
         self.game = core.VGDLParser().parseGame(self.game_desc, **self.game_args)
         self.game.buildLevel(self.level_desc)
 
+        # TODO ordered dict? Check in pdb
         self._action_set = self.game.getPossibleActions()
         self.screen_width, self.screen_height = self.game.screensize
 
@@ -56,17 +57,13 @@ class VGDLEnv(gym.Env):
         self.game.screen.fill((0, 0, 0))
 
 
-
     def step(self, a):
         self.game.tick(list(self._action_set.values())[a], True)
-        self._update_display()
         state = self._get_obs()
         reward = self.game.score - self.score_last; self.score_last = self.game.score
         terminal = self.game.ended
 
         return state, reward, terminal, {}
-
-
 
 
     @property
@@ -107,18 +104,18 @@ class VGDLEnv(gym.Env):
 
     def render(self, mode='human', close=False):
         if close:
-            if self.viewer is not None:
-                self.viewer.close()
-                self.viewer = None
-            return
+            pygame.display.quit()
+        self._update_display()
         img = self._get_image()
         if mode == 'rgb_array':
             return img
         elif mode == 'human':
-            from gym.envs.classic_control import rendering
-            if self.viewer is None:
-                self.viewer = rendering.SimpleImageViewer()
-            self.viewer.imshow(img)
+            # For now, pygame is always used for drawing
+            return True
+
+    def close(self):
+        pygame.display.quit()
+
 
 
 class Padlist(gym.ObservationWrapper):
