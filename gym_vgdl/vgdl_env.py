@@ -49,12 +49,17 @@ class VGDLEnv(gym.Env):
         elif self._obs_type == 'features':
             self.observation_space = spaces.Box(low=0, high=100, shape=(self.game.lenFeatures(),))
 
-        self.display = pygame.display.set_mode(self.game.screensize, 0, 32)
+        # Keep a Surface for drawing on (screen)
+        # and a bigger one that is actually rendered (display)
+        self.zoom = 3
+        self.display_size = np.array(self.game.screensize) * self.zoom
+        self.display = pygame.display.set_mode(self.display_size, 0, 32)
         self.screen = pygame.Surface(self.game.screensize)
-
         self.game.screen = self.screen
-        self.game.background = pygame.Surface(self.game.screensize)
         self.game.screen.fill((0, 0, 0))
+
+        # Not sure what the background is needed for, it's not drawn
+        self.game.background = pygame.Surface(self.game.screensize)
 
 
     def step(self, a):
@@ -72,7 +77,8 @@ class VGDLEnv(gym.Env):
 
     def _update_display(self):
         self.game._drawAll()
-        self.display.blit(self.screen, (0,0))
+        # Scale drawn surface onto rendered surface
+        pygame.transform.scale(self.screen, self.display_size, self.display)
         pygame.display.update()
 
     def _get_image(self):
