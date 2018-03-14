@@ -10,8 +10,8 @@ class list_space(Space):
 
     def shape(self):
         return tuple(self.shape)
-        
+
     def __repr__(self):
-        return "List(%d)" % self.basespace
+        return "List(%d)" % self.basespace.shape
     def __eq__(self, other):
         return self.basespace == other.basespace

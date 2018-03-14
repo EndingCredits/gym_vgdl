@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import gym
 from gym import spaces
 from .vgdl import core
@@ -28,38 +29,44 @@ class VGDLEnv(gym.Env):
         self._obs_type = obs_type
         self.viewer = None
         self.game_args = kwargs
-        
+
         # Need to build a sample level to get the available actions and screensize....
         self.game = core.VGDLParser().parseGame(self.game_desc, **self.game_args)
         self.game.buildLevel(self.level_desc)
 
-        self._action_set = self.game.getPossibleActions()
-        self.screen_width, self.screen_height = self.game.screensize
+        # Dict action -> key code
+        self._action_set = OrderedDict(self.game.getPossibleActions())
 
+        self.screen_width, self.screen_height = self.game.screensize
         self.score_last = self.game.score
 
         # Set action space and observation space
-
         self.action_space = spaces.Discrete(len(self._action_set))
         if self._obs_type == 'image':
             self.observation_space = spaces.Box(low=0, high=255, shape=(self.screen_height, self.screen_width, 3))
         elif self._obs_type == 'objects':
-            self.observation_space = list_space(spaces.Box(low=-100, high=100, shape=(self.game.lenObservation())))
+            # An objects observation consists of a list of observations,
+            # one for each sprite (including walls).
+            # An observation is [y, x, orient_y, orient_x, *class_one_hot, *resources]
+            self.observation_space = list_space(spaces.Box(low=-100, high=100, shape=(self.game.lenObservation(),)))
         elif self._obs_type == 'features':
-            self.observation_space = spaces.Box(low=0, high=100, shape=(self.game.lenFeatures()))
+            self.observation_space = spaces.Box(low=0, high=100, shape=(self.game.lenFeatures(),))
 
-        self.display = pygame.display.set_mode(self.game.screensize, 0, 32)
+        # Keep a Surface for drawing on (screen)
+        # and a bigger one that is actually rendered (display)
+        self.zoom = 5
+        self.display_size = np.array(self.game.screensize) * self.zoom
+        self.display = pygame.display.set_mode(self.display_size, 0, 32)
         self.screen = pygame.Surface(self.game.screensize)
-        
         self.game.screen = self.screen
-        self.game.background = pygame.Surface(self.game.screensize)
         self.game.screen.fill((0, 0, 0))
 
+        # Not sure what the background is needed for, it's not drawn
+        self.game.background = pygame.Surface(self.game.screensize)
 
 
-    def _step(self, a):
-        self.game.tick(list(self._action_set.values())[a], True)
-        self._update_display()
+    def step(self, a):
+        self.game.tick(self._action_keys[a], True)
         state = self._get_obs()
         reward = self.game.score - self.score_last; self.score_last = self.game.score
         terminal = self.game.ended
@@ -71,9 +78,18 @@ class VGDLEnv(gym.Env):
     def _n_actions(self):
         return len(self._action_set)
 
+    @property
+    def _action_keys(self):
+        return list(self._action_set.values())
+
+    def get_action_meanings(self):
+        # In the spirit of the Atari environment, describe actions with strings
+        return list(self._action_set.keys())
+
     def _update_display(self):
         self.game._drawAll()
-        self.display.blit(self.screen, (0,0))
+        # Scale drawn surface onto rendered surface
+        pygame.transform.scale(self.screen, self.display_size, self.display)
         pygame.display.update()
 
     def _get_image(self):
@@ -89,8 +105,7 @@ class VGDLEnv(gym.Env):
         elif self._obs_type == 'features':
             return self.game.getFeatures()
 
-    def _reset(self):
-
+    def reset(self):
         # Do things the easy way...
         #del self.game
         #self.game = core.VGDLParser().parseGame(self.game_desc, **self.game_args)
@@ -103,22 +118,22 @@ class VGDLEnv(gym.Env):
 
         return state
 
-    def _render(self, mode='human', close=False):
+    def render(self, mode='human', close=False):
         if close:
-            if self.viewer is not None:
-                self.viewer.close()
-                self.viewer = None
-            return
+            pygame.display.quit()
+        self._update_display()
         img = self._get_image()
         if mode == 'rgb_array':
             return img
         elif mode == 'human':
-            from gym.envs.classic_control import rendering
-            if self.viewer is None:
-                self.viewer = rendering.SimpleImageViewer()
-            self.viewer.imshow(img)
-            
-        
+            # For now, pygame is always used for drawing
+            return True
+
+    def close(self):
+        pygame.display.quit()
+
+
+
 class Padlist(gym.ObservationWrapper):
     def __init__(self, env=None, max_objs=200):
         self.max_objects = max_objs
@@ -129,7 +144,7 @@ class Padlist(gym.ObservationWrapper):
 
     def _observation(self, obs):
         return Padlist.process(obs, self.max_objects)
-        
+
     @staticmethod
     def process(input_list, to_len):
         max_len = to_len
@@ -162,7 +177,7 @@ BasicGame block_size=10
         portal  > invisible=True hidden=True
         	portalSlow  > SpawnPoint   stype=alienBlue  cooldown=16   total=20
         	portalFast  > SpawnPoint   stype=alienGreen  cooldown=12   total=20
-    
+
     LevelMapping
         . > background
         0 > background base
@@ -173,8 +188,8 @@ BasicGame block_size=10
     TerminationSet
         SpriteCounter      stype=avatar               limit=0 win=False
         MultiSpriteCounter stype1=portal stype2=alien limit=0 win=True
-        
-        
+
+
     InteractionSet
         avatar  EOS  > stepBack
         alien   EOS  > turnAround
@@ -186,10 +201,10 @@ BasicGame block_size=10
         base   alien > killSprite
         avatar alien > killSprite scoreChange=-1
         avatar bomb  > killSprite scoreChange=-1
-        alien  sam   > killSprite scoreChange=2     
+        alien  sam   > killSprite scoreChange=2
 """
 
-# the (initial) level as a block of characters 
+# the (initial) level as a block of characters
 aliens_level = """
 1.............................
 000...........................
