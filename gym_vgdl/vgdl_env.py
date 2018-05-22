@@ -13,44 +13,57 @@ class VGDLEnv(gym.Env):
         'video.frames_per_second': 25
     }
 
-    def __init__(self, game_file = None, map_file = None, obs_type='image', **kwargs):
-
-        # Load game description and level description
-        if game_file == None:
-            self.game_desc = aliens_game
-            self.level_desc = aliens_level
-        else:
-            with open (game_file, "r") as myfile:
-                self.game_desc = myfile.read()
-            with open (map_file, "r") as myfile:
-                self.level_desc = myfile.read()
+    def __init__(self,
+                 game_file = None,
+                 level_file = None,
+                 obs_type='image',
+                 **kwargs):
 
 
+        # Variables
         self._obs_type = obs_type
         self.viewer = None
         self.game_args = kwargs
-
+        
+        # Load game description and level description
+        if game_file is not None:
+            with open (game_file, "r") as myfile:
+                game_desc = myfile.read()
+            with open (level_file, "r") as myfile:
+                level_desc = myfile.read()
+            self.loadGame(game_desc, level_desc)
+        
+         
+    def loadGame(self, game_desc, level_desc, **kwargs):
+    
+        self.game_desc = game_desc
+        self.level_desc = level_desc
+        self.game_args.update(kwargs)
+                
         # Need to build a sample level to get the available actions and screensize....
         self.game = core.VGDLParser().parseGame(self.game_desc, **self.game_args)
         self.game.buildLevel(self.level_desc)
-
-        # Dict action -> key code
-        self._action_set = OrderedDict(self.game.getPossibleActions())
-
-        self.screen_width, self.screen_height = self.game.screensize
+        
         self.score_last = self.game.score
 
         # Set action space and observation space
+        self._action_set = OrderedDict(self.game.getPossibleActions())
         self.action_space = spaces.Discrete(len(self._action_set))
+        
+        self.screen_width, self.screen_height = self.game.screensize
+        
         if self._obs_type == 'image':
-            self.observation_space = spaces.Box(low=0, high=255, shape=(self.screen_height, self.screen_width, 3))
+            self.observation_space = spaces.Box(low=0, high=255,
+                    shape=(self.screen_height, self.screen_width, 3) )
         elif self._obs_type == 'objects':
             # An objects observation consists of a list of observations,
             # one for each sprite (including walls).
             # An observation is [y, x, orient_y, orient_x, *class_one_hot, *resources]
-            self.observation_space = list_space(spaces.Box(low=-100, high=100, shape=(self.game.lenObservation(),)))
+            self.observation_space = list_space( spaces.Box(low=-100, high=100,
+                    shape=(self.game.lenObservation(),) ) )
         elif self._obs_type == 'features':
-            self.observation_space = spaces.Box(low=0, high=100, shape=(self.game.lenFeatures(),))
+            self.observation_space = spaces.Box(low=0, high=100,
+                    shape=(self.game.lenFeatures(),) )
 
         # Keep a Surface for drawing on (screen)
         # and a bigger one that is actually rendered (display)
@@ -62,18 +75,10 @@ class VGDLEnv(gym.Env):
         self.game.screen.fill((0, 0, 0))
 
         # Not sure what the background is needed for, it's not drawn
+        #TODO: get rid of this
         self.game.background = pygame.Surface(self.game.screensize)
-
-
-    def step(self, a):
-        self.game.tick(self._action_keys[a], True)
-        state = self._get_obs()
-        reward = self.game.score - self.score_last; self.score_last = self.game.score
-        terminal = self.game.ended
-
-        return state, reward, terminal, {}
-
-
+        
+        
     @property
     def _n_actions(self):
         return len(self._action_set)
@@ -85,6 +90,7 @@ class VGDLEnv(gym.Env):
     def get_action_meanings(self):
         # In the spirit of the Atari environment, describe actions with strings
         return list(self._action_set.keys())
+
 
     def _update_display(self):
         self.game._drawAll()
@@ -105,28 +111,31 @@ class VGDLEnv(gym.Env):
         elif self._obs_type == 'features':
             return self.game.getFeatures()
 
+
+    def step(self, a):
+        self.game.tick(self._action_keys[a], True)
+        state = self._get_obs()
+        reward = self.game.score - self.score_last
+        self.score_last = self.game.score
+        terminal = self.game.ended
+        return state, reward, terminal, {}
+
     def reset(self):
-        # Do things the easy way...
-        #del self.game
-        #self.game = core.VGDLParser().parseGame(self.game_desc, **self.game_args)
         self.game.reset()
         self.game.buildLevel(self.level_desc)
-
         self.score_last = self.game.score
-
         state = self._get_obs()
-
         return state
 
     def render(self, mode='human', close=False):
         if close:
             pygame.display.quit()
-        self._update_display()
-        img = self._get_image()
         if mode == 'rgb_array':
+            img = self._get_image()
             return img
         elif mode == 'human':
             # For now, pygame is always used for drawing
+            self._update_display()
             return True
 
     def close(self):
@@ -150,72 +159,12 @@ class Padlist(gym.ObservationWrapper):
         max_len = to_len
         item_len = len(input_list)
         if item_len < max_len:
-          padded = np.pad(np.array(input_list,dtype=np.float32), ((0,max_len-item_len),(0,0)), mode='constant')
+          padded = np.pad(
+              np.array(input_list,dtype=np.float32),
+              ((0,max_len-item_len),(0,0)),
+              mode='constant')
           return padded
         else:
           return np.array(input_list, dtype=np.float32)[:max_len]
 
-
-####################################################################################################
-
-
-# Example VGDL description text
-# The game dynamics are specified as a paragraph of text
-
-aliens_game = """
-BasicGame block_size=10
-    SpriteSet
-        background > Immovable img=oryx/space1 hidden=True
-        base    > Immovable    color=WHITE img=oryx/planet
-        avatar  > FlakAvatar   stype=sam img=oryx/spaceship1
-        missile > Missile
-            sam  > orientation=UP    color=BLUE singleton=True img=oryx/bullet2
-            bomb > orientation=DOWN  color=RED  speed=0.5 img=oryx/bullet2
-        alien   > Bomber       stype=bomb   prob=0.05  cooldown=3 speed=0.8
-            alienGreen > img=oryx/alien3
-            alienBlue > img=oryx/alien1
-        portal  > invisible=True hidden=True
-        	portalSlow  > SpawnPoint   stype=alienBlue  cooldown=16   total=20
-        	portalFast  > SpawnPoint   stype=alienGreen  cooldown=12   total=20
-
-    LevelMapping
-        . > background
-        0 > background base
-        1 > background portalSlow
-        2 > background portalFast
-        A > background avatar
-
-    TerminationSet
-        SpriteCounter      stype=avatar               limit=0 win=False
-        MultiSpriteCounter stype1=portal stype2=alien limit=0 win=True
-
-
-    InteractionSet
-        avatar  EOS  > stepBack
-        alien   EOS  > turnAround
-        missile EOS  > killSprite
-
-        base bomb > killSprite
-        base sam > killSprite scoreChange=1
-
-        base   alien > killSprite
-        avatar alien > killSprite scoreChange=-1
-        avatar bomb  > killSprite scoreChange=-1
-        alien  sam   > killSprite scoreChange=2
-"""
-
-# the (initial) level as a block of characters
-aliens_level = """
-1.............................
-000...........................
-000...........................
-..............................
-..............................
-..............................
-..............................
-....000......000000.....000...
-...00000....00000000...00000..
-...0...0....00....00...00000..
-................A.............
-"""
 
