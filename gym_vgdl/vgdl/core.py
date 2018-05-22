@@ -34,6 +34,7 @@ class VGDLParser(object):
                 self.parseMappings(c.children)
             if c.content == "TerminationSet":
                 self.parseTerminations(c.children)
+        
         return self.game
 
     def _eval(self, estr):
@@ -165,6 +166,9 @@ class BasicGame(object):
         self.is_stochastic = False
         self._lastsaved = None
         self.reset()
+        
+        if not self.notable_sprites:
+            self.notable_sprites = self.sprite_groups
 
 
     def buildLevel(self, lstr):
@@ -205,7 +209,7 @@ class BasicGame(object):
         # guarantee that avatar is always visible
         self.sprite_order.remove('avatar')
         self.sprite_order.append('avatar')
-
+        
 
     def reset(self):
         self.score = 0
@@ -223,7 +227,8 @@ class BasicGame(object):
         res = []
         for col in range(self.width):
             for row in range(self.height):
-                r = pygame.Rect((col*self.block_size, row*self.block_size), (self.block_size, self.block_size))
+                r = pygame.Rect((col*self.block_size, row*self.block_size),
+                                (self.block_size, self.block_size))
                 free = True
                 for s in alls:
                     if r.colliderect(s.rect):
@@ -255,7 +260,8 @@ class BasicGame(object):
                         break
             if anyother:
                 continue
-            s = sclass(pos=pos, size=(self.block_size, self.block_size), name=key, random_generator=self.random_generator, **args)
+            s = sclass(pos=pos, size=(self.block_size, self.block_size),
+                name=key, random_generator=self.random_generator, **args)
             s.stypes = stypes
             self.sprite_groups[key].append(s)
             self.num_sprites += 1
@@ -296,36 +302,38 @@ class BasicGame(object):
                 res.extend([s for s in ss if s not in self.kill_list])
         return res
 
+
+    # TODO: move or remove this, it's really part of ontology
     ignoredattributes = ['stypes',
-                             'name',
-                             'lastmove',
-                             'color',
-                             'lastrect',
-                             'resources',
-                             'physicstype',
-                             'physics',
-                             'rect',
-                             'alternate_keys',
-                             'res_type',
-                             'stype',
-                             'ammo',
-                             'draw_arrow',
-                             'shrink_factor',
-                             'prob',
-                             'is_stochastic',
-                             'cooldown',
-                             'total',
-                             'is_static',
-                             'noiseLevel',
-                             'angle_diff',
-                             'only_active',
-                             'airsteering',
-                             'strength',
-                             'img',
-                             'image',
-                             'scale_image',
-                             'randomtiling',
-                             ]
+                         'name',
+                         'lastmove',
+                         'color',
+                         'lastrect',
+                         'resources',
+                         'physicstype',
+                         'physics',
+                         'rect',
+                         'alternate_keys',
+                         'res_type',
+                         'stype',
+                         'ammo',
+                         'draw_arrow',
+                         'shrink_factor',
+                         'prob',
+                         'is_stochastic',
+                         'cooldown',
+                         'total',
+                         'is_static',
+                         'noiseLevel',
+                         'angle_diff',
+                         'only_active',
+                         'airsteering',
+                         'strength',
+                         'img',
+                         'image',
+                         'scale_image',
+                         'randomtiling',
+                         ]
 
 
     # Returns gamestate in observation format
@@ -333,29 +341,29 @@ class BasicGame(object):
         #from .ontology import Avatar, Immovable, Missile, Portal, RandomNPC, ResourcePack
         state = []
 
-        sprites_list = ['avatar'] + self.notable_sprites
+        sprites_list = list(self.notable_sprites)
         num_classes = len(sprites_list)
         resources_list = self.notable_resources
 
         for i, key in enumerate(sprites_list):
             class_one_hot = [float(j==i) for j in range(num_classes)]
             for s in self.getSprites(key):
-                position = [float(s.rect.y)/self.block_size, float(s.rect.x)/self.block_size]
+                position = [ float(s.rect.y)/self.block_size,
+                             float(s.rect.x)/self.block_size ]
                 if hasattr(s, 'orientation'):
                     orientation = [float(a) for a in s.orientation]
                 else:
                     orientation = [0.0, 0.0]
 
-                resources = [float(s.resources[r]) for r in resources_list]
+                resources = [ float(s.resources[r]) for r in resources_list ]
 
                 object_att = position + orientation + class_one_hot + resources
-                #obs = [ pos[0]/self.block_size, pos[1]/self.block_size, float(orient[0]), float(orient[1]), float(isinstance(s,Avatar)),
-                #        float(isinstance(s,Immovable)), float(isinstance(s,RandomNPC)), float(isinstance(s,Missile))] #x6
+                
                 state.append(object_att)
         return state
 
     def lenObservation(self):
-        return 2 + 2 + (len(self.notable_sprites)+1) + len(self.notable_resources)
+        return 2 + 2 + (len(self.notable_sprites)) + len(self.notable_resources)
 
     def getFeatures(self):
         avatars = self.getAvatars()
