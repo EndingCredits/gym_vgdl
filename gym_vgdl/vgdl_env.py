@@ -67,7 +67,7 @@ class VGDLEnv(gym.Env):
 
         # Keep a Surface for drawing on (screen)
         # and a bigger one that is actually rendered (display)
-        self.zoom = 5
+        self.zoom = 25 / self.game.block_size
         self.display_size = np.array(self.game.screensize) * self.zoom
         self.display = pygame.display.set_mode(self.display_size, 0, 32)
         self.screen = pygame.Surface(self.game.screensize)
@@ -91,15 +91,16 @@ class VGDLEnv(gym.Env):
         # In the spirit of the Atari environment, describe actions with strings
         return list(self._action_set.keys())
 
+    def _draw_screen(self):
+        self.game._drawAll()
 
     def _update_display(self):
-        self.game._drawAll()
         # Scale drawn surface onto rendered surface
         pygame.transform.scale(self.screen, self.display_size, self.display)
         pygame.display.update()
 
     def _get_image(self):
-        self._update_display()
+        self._draw_screen()
         return np.flipud(np.rot90(pygame.surfarray.array3d(
             self.screen).astype(np.uint8)))
 
