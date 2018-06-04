@@ -1,6 +1,6 @@
 from gym.envs.registration import register
 from gym_vgdl.vgdl_env import VGDLEnv
-from register_samples import register_sample_games
+from .register_samples import register_sample_games
 import os
 
 # Register samples
