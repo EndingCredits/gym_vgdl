@@ -336,6 +336,17 @@ class BasicGame(object):
                          ]
 
 
+    def getBoundingBoxes(self):
+        boxes = []
+        for s_types in list(self.notable_sprites):
+            for s in self.getSprites(s_types):
+                box = [ float(s.rect.x),
+                        float(s.rect.y),
+                        float(s.rect.w),
+                        float(s.rect.h) ]
+                boxes.append(box)
+        return boxes            
+
     # Returns gamestate in observation format
     def getObservation(self):
         #from .ontology import Avatar, Immovable, Missile, Portal, RandomNPC, ResourcePack

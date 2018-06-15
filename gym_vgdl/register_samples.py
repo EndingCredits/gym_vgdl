@@ -41,49 +41,27 @@ resources = {
     'zelda':          []
 }
 
+suffixes = {
+    'image':    "",
+    'objects':  "_objects",
+    'features': "_features",
+}
+
 # Register the sample games
 def register_sample_games():
     for game in sample_games:
-        register(
-            id='vgdl_{}-v0'.format(game),
-            entry_point='gym_vgdl:VGDLEnv',
-            kwargs={
-                'game_file': os.path.join( DATA_DIR, game + '.txt'),
-                'level_file': os.path.join( DATA_DIR, game + '_lvl0.txt'),
-                'obs_type': 'image',
-                'block_size': 5
-            },
-            timestep_limit=1000,
-            nondeterministic=True,
-        )
-
-
-        register(
-            id='vgdl_{}_objects-v0'.format(game),
-            entry_point='gym_vgdl:VGDLEnv',
-            kwargs={
-                'game_file': os.path.join( DATA_DIR, game + '.txt'),
-                'level_file': os.path.join( DATA_DIR, game + '_lvl0.txt'),
-                'obs_type': 'objects',
-                'notable_sprites': classes[game],
-                'notable_resources': resources[game],
-                'block_size': 10
-            },
-            timestep_limit=1000,
-            nondeterministic=True,
-        )
-
-        register(
-            id='vgdl_{}_features-v0'.format(game),
-            entry_point='gym_vgdl:VGDLEnv',
-            kwargs={
-                'game_file': os.path.join( DATA_DIR, game + '.txt'),
-                'level_file': os.path.join( DATA_DIR, game + '_lvl0.txt'),
-                'obs_type': 'features',
-                'notable_sprites': classes[game],
-                'notable_resources': resources[game],
-                'block_size': 10
-            },
-            timestep_limit=1000,
-            nondeterministic=True,
-        )
+        for obs_type, suffix in suffixes.items():
+            register(
+                id='vgdl_{}{}-v0'.format(game, suffix),
+                entry_point='gym_vgdl:VGDLEnv',
+                kwargs={
+                    'game_file': os.path.join( DATA_DIR, game + '.txt'),
+                    'level_file': os.path.join( DATA_DIR, game + '_lvl0.txt'),
+                    'obs_type': obs_type,
+                    'notable_sprites': classes[game],
+                    'notable_resources': resources[game],
+                    'block_size': 5 if obs_type == 'image' else 10
+                },
+                timestep_limit=1000,
+                nondeterministic=True,
+            )
