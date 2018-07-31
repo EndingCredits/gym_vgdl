@@ -1,0 +1,27 @@
+BasicGame block_size=10
+  SpriteSet
+    background > Immovable randomtiling=0.9 img=oryx/floor3 hidden=True
+    goal  > Immovable color=GREEN img=oryx/doorclosed1
+    key   > Resource color=YELLOW img=oryx/key1
+    movable >
+      avatar > ShootAvatar frameRate=8 color=ORANGE img=oryx/swordman1_0
+      wall > Immovable autotiling=true img=oryx/wall3
+
+
+  LevelMapping
+    . > background
+    g > background goal
+    + > background key
+    A > background avatar
+    w > wall
+
+
+  InteractionSet
+    movable wall    > stepBack
+    key avatar > collectResource scoreChange=1
+    key avatar > killSprite
+    goal avatar > killIfOtherHasMore resource=key limit=2
+
+  TerminationSet
+    SpriteCounter stype=goal   win=True
+    SpriteCounter stype=avatar win=False

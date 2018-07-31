@@ -3,7 +3,7 @@ from gym_vgdl.vgdl_env import VGDLEnv
 import os
 
 # Location of sample games
-DATA_DIR = os.path.join( os.path.dirname(__file__), 'vgdl', 'sample_games') 
+DATA_DIR = os.path.join( os.path.dirname(__file__), 'vgdl', 'sample_games')
 
 sample_games = [
     'aliens',
@@ -13,7 +13,8 @@ sample_games = [
     'missilecommand',
     'portals',
     'survivezombies',
-    'zelda' ]
+    'zelda',
+    'keylink']
 
 # A list of relevant classes for each sample game
 classes = {
@@ -26,7 +27,8 @@ classes = {
     'portals':        ['avatar',  'goal', 'portalentry', 'portalexit', 'random',
                        'straight', 'wall' ],
     'survivezombies': ['avatar', 'bee', 'flower', 'hell', 'honey', 'zombie'],
-    'zelda':          ['avatar', 'enemy', 'goal', 'key', 'wall']
+    'zelda':          ['avatar', 'enemy', 'goal', 'key', 'wall'],
+    'keylink':        ['avatar', 'goal', 'key', 'wall']
 }
 
 # A list of relevant resources for each sample game
@@ -38,7 +40,8 @@ resources = {
     'missilecommand': [],
     'portals':        [],
     'survivezombies': ['honey'],
-    'zelda':          []
+    'zelda':          [],
+    'keylink':        ['key']
 }
 
 suffixes = {
