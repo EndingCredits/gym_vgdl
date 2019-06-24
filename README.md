@@ -1,3 +1,5 @@
+**This repo is deprecated in favour of (https://github.com/rubenvereecken/py-vgdl) **
+
 Quick and dirty port of py-vgdl (https://github.com/schaul/py-vgdl) to work as an OpenAI Gym (https://github.com/openai/gym) environment.
 
 Install using pip:
