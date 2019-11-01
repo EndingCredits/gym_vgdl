@@ -6,6 +6,7 @@ import pygame
 import numpy as np
 from .list_space import list_space
 
+import json
 
 class VGDLEnv(gym.Env):
     metadata = {
@@ -64,6 +65,9 @@ class VGDLEnv(gym.Env):
         elif self._obs_type == 'features':
             self.observation_space = spaces.Box(low=0, high=100,
                     shape=(self.game.lenFeatures(),) )
+        else:
+            self.observation_space = spaces.Box(low=0, high=100,
+                    shape=(1,) )
 
         # Keep a Surface for drawing on (screen)
         # and a bigger one that is actually rendered (display)
@@ -111,6 +115,18 @@ class VGDLEnv(gym.Env):
             return self.game.getObservation()
         elif self._obs_type == 'features':
             return self.game.getFeatures()
+        elif self._obs_type == 'json':
+            state = self.game.getRawObservation()
+            def encoder(obj):
+                if hasattr(obj, '__dict__'):
+                    return obj.__dict__
+                else:
+                    return type(obj).__name__
+
+
+            jsons = json.dumps(state, default=encoder, indent=2)
+            return jsons
+
 
 
     def step(self, a):

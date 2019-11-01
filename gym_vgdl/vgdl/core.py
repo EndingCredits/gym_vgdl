@@ -377,6 +377,13 @@ class BasicGame(object):
     def lenObservation(self):
         return 2 + 2 + (len(self.notable_sprites)) + len(self.notable_resources)
 
+    def getRawObservation(self):
+        state = []
+        for i, key in enumerate(self.notable_sprites):
+            for sprite in self.getSprites(key):
+                state.append(sprite)
+        return state
+
     def getFeatures(self):
         avatars = self.getAvatars()
         l = len(avatars)

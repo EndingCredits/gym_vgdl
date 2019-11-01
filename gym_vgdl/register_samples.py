@@ -45,6 +45,7 @@ suffixes = {
     'image':    "",
     'objects':  "_objects",
     'features': "_features",
+    'json': "_json",
 }
 
 # Register the sample games
